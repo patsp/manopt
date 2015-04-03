@@ -1,26 +1,23 @@
-function [egrad, storedb] = getEuclideanGradient(problem, x, storedb)
+function [egrad, store] = getEuclideanGradient(problem, x, store)
 % Computes the Euclidean gradient of the cost function at x.
 %
-% function [egrad, storedb] = getEuclideanGradient(problem, x, storedb)
+% function [egrad, store] = getEuclideanGradient(problem, x)
+% function [egrad, store] = getEuclideanGradient(problem, x, store)
 %
 % Returns the Euclidean gradient at x of the cost function described in the
-% problem structure. The cache database storedb is passed along, possibly
+% problem structure. The cache structure store is passed along, possibly
 % modified and returned in the process.
 %
 % Because computing the Hessian based on the Euclidean Hessian will require
 % the Euclidean gradient every time, to avoid overly redundant
 % computations, if the egrad function does not use the store caching
-% capabilites, we implement an automatic caching functionality. This means
-% that even if the user does not use the store parameter, the hashing
-% function will be used, and this can translate in a performance hit for
-% small problems. For problems with expensive cost functions, this should
-% be a bonus though. Writing egrad to accept the optional store parameter
-% (as input and output) will disable automatic caching, but activate user
-% controlled caching, which means hashing will be computed in all cases.
+% capabilities, we implement an automatic caching functionality. This
+% means extra memory will be used for caching, "behind the scenes".
+% How much memory is used can be controled via options.storedepth.
 %
-% If you absolutely do not want hashing to be used (and hence do not want
-% caching to be used), you can define grad instead of egrad, without store
-% support, and call problem.M.egrad2rgrad manually.
+% If you absolutely do not want caching to be used, you can define grad
+% instead of egrad, without store support, and call problem.M.egrad2rgrad
+% manually.
 %
 % See also: getGradient canGetGradient canGetEuclideanGradient
 
@@ -28,6 +25,13 @@ function [egrad, storedb] = getEuclideanGradient(problem, x, storedb)
 % Original author: Nicolas Boumal, July 9, 2013.
 % Contributors: 
 % Change log: 
+%
+%   April 2, 2015 (NB):
+%       Only works with the store associated to x, not the whole storedb.
+
+    if nargin < 3
+        store = getEmptyStore();
+    end
 
     
     if isfield(problem, 'egrad')
@@ -38,23 +42,15 @@ function [egrad, storedb] = getEuclideanGradient(problem, x, storedb)
         switch nargin(problem.egrad)
             case 1
                 % If it does not want to deal with the store structure,
-                % then we do some caching of our own. There is a small
-                % performance hit for this is some cases, but we expect
-                % that this is most often the preferred choice.
-                store = getStore(problem, x, storedb);
+                % then we do some caching of our own.
                 if ~isfield(store, 'egrad__')
                     store.egrad__ = problem.egrad(x);
-                    storedb = setStore(problem, x, storedb, store);
                 end
                 egrad = store.egrad__;
             case 2
-                % Obtain, pass along, and save the store structure
-                % associated to this point. If the user deals with the
-                % store structure, then we don't do any automatic caching:
+                % Otherwise we don't do any automatic caching:
                 % the user is in control.
-                store = getStore(problem, x, storedb);
                 [egrad, store] = problem.egrad(x, store);
-                storedb = setStore(problem, x, storedb, store);
             otherwise
                 up = MException('manopt:getEuclideanGradient:badegrad', ...
                     'egrad should accept 1 or 2 inputs.');

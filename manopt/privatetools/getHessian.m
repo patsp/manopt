@@ -1,10 +1,11 @@
-function [hess, storedb] = getHessian(problem, x, d, storedb)
+function [hess, store] = getHessian(problem, x, d, store)
 % Computes the Hessian of the cost function at x along d.
 %
-% function [hess, storedb] = getHessian(problem, x, d, storedb)
+% function [hess, store] = getHessian(problem, x, d)
+% function [hess, store] = getHessian(problem, x, d, store)
 %
 % Returns the Hessian at x along d of the cost function described in the
-% problem structure. The cache database storedb is passed along, possibly
+% problem structure. The cache structure store is passed along, possibly
 % modified and returned in the process.
 %
 % If an exact Hessian is not provided, an approximate Hessian is returned
@@ -18,6 +19,13 @@ function [hess, storedb] = getHessian(problem, x, d, storedb)
 % Original author: Nicolas Boumal, Dec. 30, 2012.
 % Contributors: 
 % Change log: 
+%
+%   April 2, 2015 (NB):
+%       Only works with the store associated to x, not the whole storedb.
+
+    if nargin < 4
+        store = getEmptyStore();
+    end
     
     if isfield(problem, 'hess')
     %% Compute the Hessian using hess.
@@ -28,11 +36,7 @@ function [hess, storedb] = getHessian(problem, x, d, storedb)
             case 2
                 hess = problem.hess(x, d);
             case 3
-                % Obtain, pass along, and save the store structure
-                % associated to this point.
-                store = getStore(problem, x, storedb);
                 [hess, store] = problem.hess(x, d, store);
-                storedb = setStore(problem, x, storedb, store);
             otherwise
                 up = MException('manopt:getHessian:badhess', ...
                     'hess should accept 2 or 3 inputs.');
@@ -44,7 +48,7 @@ function [hess, storedb] = getHessian(problem, x, d, storedb)
     
         % We will need the Euclidean gradient for the conversion from the
         % Euclidean Hessian to the Riemannian Hessian.
-        [egrad, storedb] = getEuclideanGradient(problem, x, storedb);
+        [egrad, store] = getEuclideanGradient(problem, x, store);
 		
         % Check whether the ehess function wants to deal with the store
         % structure or not.
@@ -52,11 +56,7 @@ function [hess, storedb] = getHessian(problem, x, d, storedb)
             case 2
                 ehess = problem.ehess(x, d);
             case 3
-                % Obtain, pass along, and save the store structure
-                % associated to this point.
-                store = getStore(problem, x, storedb);
                 [ehess, store] = problem.ehess(x, d, store);
-                storedb = setStore(problem, x, storedb, store);
             otherwise
                 up = MException('manopt:getHessian:badehess', ...
                     'ehess should accept 2 or 3 inputs.');
@@ -69,7 +69,7 @@ function [hess, storedb] = getHessian(problem, x, d, storedb)
     else
     %% Attempt the computation of an approximation of the Hessian.
         
-        [hess, storedb] = getApproxHessian(problem, x, d, storedb);
+        [hess, store] = getApproxHessian(problem, x, d, store);
         
     end
     

@@ -1,11 +1,12 @@
-function [hessfd, storedb] = getHessianFD(problem, x, d, storedb)
+function [hessfd, store] = getHessianFD(problem, x, d, store)
 % Computes an approx. of the Hessian w/ finite differences of the gradient.
 %
-% function [hessfd, storedb] = getHessianFD(problem, x, d, storedb)
+% function [hessfd, store] = getHessianFD(problem, x, d)
+% function [hessfd, store] = getHessianFD(problem, x, d, store)
 %
 % Returns a finite difference approximation of the Hessian at x along d of
-% the cost function described in the problem structure. The cache database
-% storedb is passed along, possibly modified and returned in the process.
+% the cost function described in the problem structure. The cache structure
+% store is passed along, possibly modified and returned in the process.
 % The finite difference is based on computations of the gradient. 
 %
 % If the gradient cannot be computed, an exception is thrown.
@@ -23,6 +24,13 @@ function [hessfd, storedb] = getHessianFD(problem, x, d, storedb)
 %       complete radial linearity, and that this was harder to achieve.
 %       This appears not to be necessary after all, which simplifies the
 %       code.
+%
+%   April 2, 2015 (NB):
+%       Only works with the store associated to x, not the whole storedb.
+
+    if nargin < 4
+        store = getEmptyStore();
+    end
 
     
     if ~canGetGradient(problem)
@@ -47,11 +55,11 @@ function [hessfd, storedb] = getHessianFD(problem, x, d, storedb)
     c = epsilon/norm_d;
     
     % Compute the gradient at the current point.
-    [grad0, storedb] = getGradient(problem, x, storedb);
+    [grad0, store] = getGradient(problem, x, store);
     
     % Compute a point a little further along d and the gradient there.
     x1 = problem.M.retr(x, d, c);
-    [grad1, storedb] = getGradient(problem, x1, storedb);
+    [grad1, store] = getGradient(problem, x1, store);
     
     % Transport grad1 back from x1 to x.
     grad1 = problem.M.transp(x1, x, grad1);

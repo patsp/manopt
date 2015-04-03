@@ -1,9 +1,9 @@
-function [stepsize, newx, storedb, lsmem, lsstats] = ...
-                linesearch(problem, x, d, f0, df0, options, storedb, lsmem)
+function [stepsize, newx, store, newstore, lsmem, lsstats] = ...
+                linesearch(problem, x, d, f0, df0, options, store, lsmem)
 % Standard line-search algorithm (step size selection) for descent methods.
 %
-% function [stepsize, newx, storedb, lsmem, lsstats] = 
-%               linesearch(problem, x, d, f0, df0, options, storedb, lsmem)
+% function [stepsize, newx, store, newstore, lsmem, lsstats] = 
+%               linesearch(problem, x, d, f0, df0, options, store, lsmem)
 %
 % Base line-search algorithm for descent methods, based on a simple
 % backtracking method. The search direction provided has to be a descent
@@ -28,7 +28,7 @@ function [stepsize, newx, storedb, lsmem, lsstats] = ...
 %  f0 : cost value at x
 %  df0 : directional derivative at x along d
 %  options : options structure (see in code for usage)
-%  storedb : store database structure for caching purposes
+%  store : store structure for caching purposes at x
 %  lsmem : a special memory holder to give the linesearch the opportunity
 %          to "remember" what happened in the previous calls. See below.
 %
@@ -37,7 +37,8 @@ function [stepsize, newx, storedb, lsmem, lsstats] = ...
 %  stepsize : norm of the vector retracted to reach newx from x.
 %  newx : next iterate suggested by the line-search algorithm, such that
 %         the retraction at x of the vector alpha*d reaches newx.
-%  storedb : the (possibly updated) store database structure.
+%  store : the (possibly updated) store structure at x.
+%  newstore : the new store structure at newx.
 %  lsmem : the (possibly updated) lsmem memory holder.
 %  lsstats : statistics about the line-search procedure (stepsize, number
 %            of trials etc).
@@ -70,11 +71,12 @@ function [stepsize, newx, storedb, lsmem, lsstats] = ...
 %                           replaced by 8*f (and hence the directional
 %                           derivatives of f are scaled accordingly), the
 %                           stepsizes computed will not change.
-%     Nov. 7, 2013 (NB) :   The linesearch is now invariant under rescaling
+%     Nov.  7, 2013 (NB) :   The linesearch is now invariant under rescaling
 %                           of the search direction d. The meaning of
 %                           stepsize is also more clear in the comments.
 %                           Added a parameter ls_initial_stepsize to give
 %                           users control over the first step size trial.
+%     April 2, 2015 (NB) :  Uses store and newstore instead of storedb.
 
 
     % Backtracking default parameters. These can be overwritten in the
@@ -92,6 +94,17 @@ function [stepsize, newx, storedb, lsmem, lsstats] = ...
     suff_decr = options.ls_suff_decr;
     max_ls_steps = options.ls_max_steps;
     initial_stepsize = options.ls_initial_stepsize;
+	
+	
+	% Because this function will create new points x and evaluate cost
+	% related quantities at those points, it must carefully manage its
+	% own storedb, just like a solver would. We must be particularly
+	% careful what happens with the permanent memory, which has to be
+	% constantly passed along.
+	storedb = struct();
+	key = uint32(0);
+	storedb = setStore(storedb, key, store);
+	
     
     % Compute the norm of the search direction.
     % This is useful to make the linesearch algorithm invariant under the
@@ -129,7 +142,11 @@ function [stepsize, newx, storedb, lsmem, lsstats] = ...
 
     % Make the chosen step and compute the cost there.
     newx = problem.M.retr(x, d, alpha);
-    [newf storedb] = getCost(problem, newx, storedb);
+	newkey = key + 1;
+	% It's a new key, so newstore will just contain the permanent data
+	newstore = getStore(storedb, newkey);
+    [newf, newstore] = getCost(problem, newx, newstore);
+	storedb = setStore(storedb, newkey, newstore);
     cost_evaluations = 1;
     
     % Backtrack while the Armijo criterion is not satisfied
@@ -138,23 +155,30 @@ function [stepsize, newx, storedb, lsmem, lsstats] = ...
         % Reduce the step size,
         alpha = contraction_factor * alpha;
         
-        % and look closer down the line
+        % and look closer down the line.
         newx = problem.M.retr(x, d, alpha);
-        [newf storedb] = getCost(problem, newx, storedb);
+		newkey = newkey + 1;
+		newstore = getStore(storedb, newkey);
+		[newf, newstore] = getCost(problem, newx, newstore);
+		storedb = setStore(storedb, newkey, newstore);
         cost_evaluations = cost_evaluations + 1;
         
-        % Make sure we don't run out of budget
+        % Make sure we don't run out of budget.
         if cost_evaluations >= max_ls_steps
             break;
         end
         
     end
+	
+	% Get the updated version of the store at x (the original point)
+	store = getStore(storedb, key);
     
     % If we got here without obtaining a decrease, we reject the step.
     if newf > f0
         alpha = 0;
         newx = x;
         newf = f0; %#ok<NASGU>
+		newstore = store;
     end
     
     % As seen outside this function, stepsize is the size of the vector we

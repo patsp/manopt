@@ -228,7 +228,7 @@ function [x, cost, info, options] = neldermead(problem, x, options)
         else
             stats.time = info(iter).time + toc(timetic);
         end
-        stats = applyStatsfun(problem, x, storedb, options, stats);
+        stats = applyStatsfun(problem, x, store, options, stats);
     end
     
 end

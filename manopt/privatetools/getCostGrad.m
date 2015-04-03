@@ -1,10 +1,11 @@
-function [cost, grad, storedb] = getCostGrad(problem, x, storedb)
+function [cost, grad, store] = getCostGrad(problem, x, store)
 % Computes the cost function and the gradient at x in one call if possible.
 %
-% function [cost, storedb] = getCostGrad(problem, x, storedb)
+% function [cost, store] = getCostGrad(problem, x)
+% function [cost, store] = getCostGrad(problem, x, store)
 %
 % Returns the value at x of the cost function described in the problem
-% structure, as well as the gradient at x. The cache database storedb is
+% structure, as well as the gradient at x. The cache struct store is
 % passed along, possibly modified and returned in the process.
 %
 % See also: canGetCost canGetGradient getCost getGradient
@@ -13,6 +14,13 @@ function [cost, grad, storedb] = getCostGrad(problem, x, storedb)
 % Original author: Nicolas Boumal, Dec. 30, 2012.
 % Contributors: 
 % Change log: 
+%
+%   April 2, 2015 (NB):
+%       Only works with the store associated to x, not the whole storedb.
+
+    if nargin < 3
+        store = getEmptyStore();
+    end
 
 
     if isfield(problem, 'costgrad')
@@ -24,11 +32,7 @@ function [cost, grad, storedb] = getCostGrad(problem, x, storedb)
             case 1
                 [cost, grad] = problem.costgrad(x);
             case 2
-                % Obtain, pass along, and save the store structure
-                % associated to this point.
-                store = getStore(problem, x, storedb);
                 [cost, grad, store] = problem.costgrad(x, store);
-                storedb = setStore(problem, x, storedb, store);
             otherwise
                 up = MException('manopt:getCostGrad:badcostgrad', ...
                     'costgrad should accept 1 or 2 inputs.');
@@ -38,8 +42,8 @@ function [cost, grad, storedb] = getCostGrad(problem, x, storedb)
     else
     %% Revert to calling getCost and getGradient separately
     
-        [cost, storedb] = getCost(problem, x, storedb);
-        [grad, storedb] = getGradient(problem, x, storedb);
+        [cost, store] = getCost(problem, x, store);
+        [grad, store] = getGradient(problem, x, store);
         
     end
     

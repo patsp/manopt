@@ -1,14 +1,15 @@
-function [t, storedb] = getLinesearch(problem, x, d, storedb)
+function [t, store] = getLinesearch(problem, x, d, store)
 % Returns a hint for line-search algorithms.
 %
-% function [t, storedb] = getLinesearch(problem, x, d, storedb)
+% function [t, store] = getLinesearch(problem, x, d)
+% function [t, store] = getLinesearch(problem, x, d, store)
 %
 % For a line-search problem at x along the tangent direction d, computes
 % and returns t such that retracting t*d at x yields a good point around
 % where to look for a line-search solution. That is: t is a hint as to "how
 % far to look" along the line.
 % 
-% The cache database storedb is passed along, possibly modified and
+% The cache structure store is passed along, possibly modified and
 % returned in the process.
 %
 % See also: canGetLinesearch
@@ -17,6 +18,13 @@ function [t, storedb] = getLinesearch(problem, x, d, storedb)
 % Original author: Nicolas Boumal, July 17, 2014.
 % Contributors: 
 % Change log: 
+%
+%   April 2, 2015 (NB):
+%       Only works with the store associated to x, not the whole storedb.
+
+    if nargin < 4
+        store = getEmptyStore();
+    end
 
 
     if isfield(problem, 'linesearch')
@@ -28,11 +36,7 @@ function [t, storedb] = getLinesearch(problem, x, d, storedb)
             case 2
                 t = problem.linesearch(x, d);
             case 3
-                % Obtain, pass along, and save the store structure
-                % associated to this point.
-                store = getStore(problem, x, storedb);
                 [t, store] = problem.linesearch(x, d, store);
-                storedb = setStore(problem, x, storedb, store);
             otherwise
                 up = MException('manopt:getLinesearch:badfun', ...
                     'linesearch should accept 2 or 3 inputs.');

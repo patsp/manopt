@@ -234,7 +234,7 @@ function [xbest, fbest, info, options] = pso(problem, x, options)
         
         % BM: Begin storing user defined stats for the entire population
         num_old_fields = size(fieldnames(stats), 1);
-        trialstats = applyStatsfun(problem, x{1}, storedb, options, stats);% BM
+        trialstats = applyStatsfun(problem, x{1}, store, options, stats);% BM
         new_fields = fieldnames(trialstats);
         num_new_fields = size(fieldnames(trialstats), 1);
         num_additional_fields =  num_new_fields - num_old_fields; % User has defined new fields
@@ -243,7 +243,7 @@ function [xbest, fbest, info, options] = pso(problem, x, options)
             stats = setfield(stats, char(tempfield), cell(options.populationsize, 1));
         end
         for ii = 1 : options.populationsize % Adding information for each element of the population
-            tempstats = applyStatsfun(problem, x{ii}, storedb, options, stats);
+            tempstats = applyStatsfun(problem, x{ii}, store, options, stats);
             for jj = 1 : num_additional_fields
                 tempfield = new_fields(num_old_fields + jj);
                 tempfield_value = tempstats.(char(tempfield));

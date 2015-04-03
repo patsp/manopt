@@ -295,7 +295,8 @@ function [Y, info] = maxcut_fixedrank(L, Y)
     % options.miniter = 5;
     
     options.verbosity = 2;
-    [Y, Ycost, info] = trustregions(problem, Y, options); %#ok<ASGLU>
+    [Y, Ycost, info] = steepestdescent(problem, Y, options); %#ok<ASGLU>
+%     [Y, Ycost, info] = trustregions(problem, Y, options); %#ok<ASGLU>
     
     fprintf('Products with L: %d\n', max([info.Lproducts]));
 

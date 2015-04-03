@@ -1,16 +1,16 @@
-function storedb = setStore(problem, x, storedb, store)
+function storedb = setStore(storedb, key, store)
 % Updates the store struct. pertaining to a point in the storedb database.
 %
-% function storedb = setStore(problem, x, storedb, store)
+% function storedb = setStore(storedb, key, store)
 %
 % Updates the storedb database of structures such that the structure
-% corresponding to the point x will be replaced by store. If there was no
-% record for the point x, it is created and set to store. The updated
-% storedb database is returned. The lastset__ field of the store structure
-% keeps track of which stores were updated latest.
+% corresponding to the point x with given key will be replaced by store.
+% If there was no record for the point x, it is created and set to store.
+% The updated storedb database is returned. The lastset__ field of the
+% store structure keeps track of which stores were updated latest.
 %
 % If store contains a field called "permanent", its contents are placed in
-% storedb.permanent, and the field is removed from the store structre
+% storedb.permanent, and the field is removed from the store structure
 % before storage.
 
 % This file is part of Manopt: www.manopt.org.
@@ -28,6 +28,10 @@ function storedb = setStore(problem, x, storedb, store)
 %       associated to a specific store; it is passed around from call to
 %       call, to create a 'permanent memory' that spans, for example, all
 %       iterations of a solver's execution.
+%
+%   April 2, 2015, NB:
+%       setStore now asks for a key rather than (problem, x). Thus, no more
+%       hash calls inside setStore.
 
     % This persistent counter is used to keep track of the order in which
     % store structures are updated. This is used by purgeStoredb to erase
@@ -54,10 +58,10 @@ function storedb = setStore(problem, x, storedb, store)
     store.lastset__ = counter;
     counter = counter + 1;
        
-    % Construct the fieldname (key) associated to the current point x.
-    key = problem.M.hash(x);
+    % Get to know in what field that key is to be stored.
+    fname = fieldnameFromKey(key);
     
     % Put the store in storage at that key.
-    storedb.(key) = store;
+    storedb.(fname) = store;
 
 end

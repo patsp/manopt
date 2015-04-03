@@ -1,11 +1,12 @@
-function [cost, storedb] = getCost(problem, x, storedb)
+function [cost, store] = getCost(problem, x, store)
 % Computes the cost function at x.
 %
-% function [cost, storedb] = getCost(problem, x, storedb)
+% function [cost, store] = getCost(problem, x)
+% function [cost, store] = getCost(problem, x, store)
 %
 % Returns the value at x of the cost function described in the problem
 % structure. The cache database storedb is passed along, possibly modified
-% and returned in the process.
+% and returned in the process. key is the storedb key associated to x.
 %
 % See also: canGetCost
 
@@ -13,6 +14,13 @@ function [cost, storedb] = getCost(problem, x, storedb)
 % Original author: Nicolas Boumal, Dec. 30, 2012.
 % Contributors: 
 % Change log: 
+%
+%   April 2, 2015 (NB):
+%       Only works with the store associated to x, not the whole storedb.
+
+    if nargin < 3
+        store = getEmptyStore();
+    end
 
 
     if isfield(problem, 'cost')
@@ -24,11 +32,7 @@ function [cost, storedb] = getCost(problem, x, storedb)
             case 1
                 cost = problem.cost(x);
             case 2
-                % Obtain, pass along, and save the store structure
-                % associated to this point.
-                store = getStore(problem, x, storedb);
                 [cost, store] = problem.cost(x, store);
-                storedb = setStore(problem, x, storedb, store);
             otherwise
                 up = MException('manopt:getCost:badcost', ...
                     'cost should accept 1 or 2 inputs.');
@@ -44,11 +48,7 @@ function [cost, storedb] = getCost(problem, x, storedb)
             case 1
                 cost = problem.costgrad(x);
             case 2
-                % Obtain, pass along, and save the store structure
-                % associated to this point.
-                store = getStore(problem, x, storedb);
                 [cost, grad, store] = problem.costgrad(x, store); %#ok
-                storedb = setStore(problem, x, storedb, store);
             otherwise
                 up = MException('manopt:getCost:badcostgrad', ...
                     'costgrad should accept 1 or 2 inputs.');

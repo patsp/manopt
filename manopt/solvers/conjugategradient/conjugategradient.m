@@ -378,7 +378,7 @@ end
             stats.linesearch = lsstats;
             stats.beta = beta;
         end
-        stats = applyStatsfun(problem, x, storedb, options, stats);
+        stats = applyStatsfun(problem, x, store, options, stats);
     end
 
 end

@@ -1,10 +1,11 @@
-function [grad, storedb] = getGradient(problem, x, storedb)
+function [grad, store] = getGradient(problem, x, store)
 % Computes the gradient of the cost function at x.
 %
-% function [grad, storedb] = getGradient(problem, x, storedb)
+% function [grad, store] = getGradient(problem, x)
+% function [grad, store] = getGradient(problem, x, store)
 %
 % Returns the gradient at x of the cost function described in the problem
-% structure. The cache database storedb is passed along, possibly modified
+% structure. The cache structure store is passed along, possibly modified
 % and returned in the process.
 %
 % See also: getDirectionalDerivative canGetGradient
@@ -13,6 +14,13 @@ function [grad, storedb] = getGradient(problem, x, storedb)
 % Original author: Nicolas Boumal, Dec. 30, 2012.
 % Contributors: 
 % Change log: 
+%
+%   April 2, 2015 (NB):
+%       Only works with the store associated to x, not the whole storedb.
+
+    if nargin < 3
+        store = getEmptyStore();
+    end
 
     
     if isfield(problem, 'grad')
@@ -24,11 +32,7 @@ function [grad, storedb] = getGradient(problem, x, storedb)
             case 1
                 grad = problem.grad(x);
             case 2
-                % Obtain, pass along, and save the store structure
-                % associated to this point.
-                store = getStore(problem, x, storedb);
-                [grad store] = problem.grad(x, store);
-                storedb = setStore(problem, x, storedb, store);
+                [grad, store] = problem.grad(x, store);
             otherwise
                 up = MException('manopt:getGradient:badgrad', ...
                     'grad should accept 1 or 2 inputs.');
@@ -44,11 +48,7 @@ function [grad, storedb] = getGradient(problem, x, storedb)
             case 1
                 [unused, grad] = problem.costgrad(x); %#ok
             case 2
-                % Obtain, pass along, and save the store structure
-                % associated to this point.
-                store = getStore(problem, x, storedb);
                 [unused, grad, store] = problem.costgrad(x, store); %#ok
-                storedb = setStore(problem, x, storedb, store);
             otherwise
                 up = MException('manopt:getGradient:badcostgrad', ...
                     'costgrad should accept 1 or 2 inputs.');
@@ -58,7 +58,7 @@ function [grad, storedb] = getGradient(problem, x, storedb)
     elseif canGetEuclideanGradient(problem)
     %% Compute the gradient using the Euclidean gradient.
         
-        [egrad, storedb] = getEuclideanGradient(problem, x, storedb);
+        [egrad, store] = getEuclideanGradient(problem, x, store);
         grad = problem.M.egrad2rgrad(x, egrad);
 
     else

@@ -1,10 +1,11 @@
-function [diff, storedb] = getDirectionalDerivative(problem, x, d, storedb)
+function [diff, store] = getDirectionalDerivative(problem, x, d, store)
 % Computes the directional derivative of the cost function at x along d.
 %
-% function [diff, storedb] = getDirectionalDerivative(problem, x, d, storedb)
+% function [diff, store] = getDirectionalDerivative(problem, x, d)
+% function [diff, store] = getDirectionalDerivative(problem, x, d, store)
 %
 % Returns the derivative at x along d of the cost function described in the
-% problem structure. The cache database storedb is passed along, possibly
+% problem structure. The cache structure store is passed along, possibly
 % modified and returned in the process.
 %
 % See also: getGradient canGetDirectionalDerivative
@@ -13,6 +14,13 @@ function [diff, storedb] = getDirectionalDerivative(problem, x, d, storedb)
 % Original author: Nicolas Boumal, Dec. 30, 2012.
 % Contributors: 
 % Change log: 
+%
+%   April 2, 2015 (NB):
+%       Only works with the store associated to x, not the whole storedb.
+
+    if nargin < 4
+        store = getEmptyStore();
+    end
 
     
     if isfield(problem, 'diff')
@@ -26,9 +34,7 @@ function [diff, storedb] = getDirectionalDerivative(problem, x, d, storedb)
             case 3
                 % Obtain, pass along, and save the store structure
                 % associated to this point.
-                store = getStore(problem, x, storedb);
                 [diff store] = problem.diff(x, d, store);
-                storedb = setStore(problem, x, storedb, store);
             otherwise
                 up = MException('manopt:getDirectionalDerivative:baddiff', ...
                     'diff should accept 2 or 3 inputs.');
@@ -39,7 +45,7 @@ function [diff, storedb] = getDirectionalDerivative(problem, x, d, storedb)
     %% Compute the directional derivative using the gradient.
         
         % Compute the gradient at x, then compute its inner product with d.
-        [grad, storedb] = getGradient(problem, x, storedb);
+        [grad, store] = getGradient(problem, x, store);
         diff = problem.M.inner(x, grad, d);
         
     else

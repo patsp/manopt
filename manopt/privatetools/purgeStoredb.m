@@ -29,23 +29,23 @@ function storedb = purgeStoredb(storedb, storedepth)
         return;
     end
 
-    % Get list of field names (keys).
-    keys = fieldnames(storedb);
+    % Get list of field names.
+    fnames = fieldnames(storedb);
     
     % Remove the 'permanent' field from the list: that one is special.
     % TODO: this is rather slow.
-    keys = setdiff(keys, 'permanent');
+    fnames = setdiff(fnames, 'permanent');
     
-    nkeys = length(keys);
+    nfields = length(fnames);
     
     % If we need to remove some of the elements in the database.
-    if nkeys > storedepth
+    if nfields > storedepth
         
         % Get the last-set counter of each element: a higher number means
         % it was modified more recently.
-        lastset = zeros(nkeys, 1, 'uint32');
-        for i = 1 : nkeys
-            store = storedb.(keys{i});
+        lastset = zeros(nfields, 1, 'uint32');
+        for i = 1 : nfields
+            store = storedb.(fnames{i});
             lastset(i) = store.lastset__;
         end
         
@@ -55,7 +55,7 @@ function storedb = purgeStoredb(storedb, storedepth)
         minlastset = sortlastset(storedepth);
         
         % Remove all fields that are too old.
-        storedb = rmfield(storedb, keys(lastset < minlastset));
+        storedb = rmfield(storedb, fnames(lastset < minlastset));
         
     end
     
