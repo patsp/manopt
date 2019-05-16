@@ -42,9 +42,13 @@ problem.cost = @(X) sum(sum(triu(1./(1-X'*X), 1))) / n^2;
 % value for the gradient norm tolerance.
 opts.tolgradnorm = 1e-4;
 
+opts.verbosity = 0;
 % Pick a solver. Both work fairly well on this problem.
 % X = conjugategradient(problem, [], opts);
-X = rlbfgs(problem, [], opts);
+%X = rlbfgs(problem, [], opts);
+%X = pso(problem, [], opts);
+opts.maxiter = 10000;
+X = es(problem, problem.M.rand(), 1, opts);
 
 % Plot the points on a translucid sphere
 if nargout == 0 && d == 3
@@ -55,6 +59,16 @@ if nargout == 0 && d == 3
     axis equal;
     box off;
     axis off;
+
+    %{
+    res = 0;
+    for i = 1:(n-1)
+      for j = (i+1):n
+        res = res + 1 / (norm(X(:, i) - X(:, j)));
+      end
+    end
+    res
+    %}
 end
 
 % For much better performance, after an early prototyping phase, the
